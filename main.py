@@ -5,7 +5,7 @@ pygame.init()
 
 WIDTH, HEIGHT = 800, 600
 win = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('platformer')
+pygame.display.set_caption('Platformer')
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -18,6 +18,9 @@ player_pos = [WIDTH // 2, HEIGHT - 2 * player_size]
 player_vel = [0, 0]
 player_speed = 5
 player_jump = -15
+player_on_ground = False
+player_jump_count = 0
+max_jumps = 2
 
 platforms = [
     [0, HEIGHT - 20, WIDTH, 20],
@@ -30,40 +33,52 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
-    win.fill(WHITE)
-    
-    for platform in platforms:
-        pygame.draw.rect(win, BLACK, platform)
-    
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player_pos[0] -= player_speed
-    if keys[pygame.K_RIGHT]:
-        player_pos[0] += player_speed
-    if keys[pygame.K_SPACE] and player_vel[1] == 0:
-        player_vel[1] = player_jump
 
-    player_vel[1] += 1  
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_a]:
+        player_pos[0] -= player_speed
+    if keys[pygame.K_d]:
+        player_pos[0] += player_speed
+    if keys[pygame.K_SPACE] and player_jump_count <= max_jumps:
+        player_vel[1] = player_jump
+        player_jump_count += 1
+
+    player_vel[1] += 1
     player_pos[1] += player_vel[1]
+
+    if player_pos[0] < 0:
+        player_pos[0] = 0
+    if player_pos[0] > WIDTH - player_size:
+        player_pos[0] = WIDTH - player_size
+
+    player_on_ground = False
 
     for platform in platforms:
         if (player_pos[1] + player_size >= platform[1] and
-            player_pos[1] + player_size <= platform[1] + platform[3] and
-            player_pos[0] + player_size > platform[0] and
-            player_pos[0] < platform[0] + platform[2]):
+                player_pos[1] + player_size - player_vel[1] <= platform[1] and
+                player_pos[0] + player_size > platform[0] and
+                player_pos[0] < platform[0] + platform[2]):
             player_pos[1] = platform[1] - player_size
             player_vel[1] = 0
-    
+            player_on_ground = True
+            player_jump_count = 0
+
+    if player_pos[1] > HEIGHT - player_size:
+        player_pos[1] = HEIGHT - player_size
+        player_vel[1] = 0
+        player_on_ground = True
+        player_jump_count = 0
+
+    win.fill(WHITE)
+
+    for platform in platforms:
+        pygame.draw.rect(win, BLACK, platform)
+
     pygame.draw.rect(win, BLUE, (*player_pos, player_size, player_size))
-                                    
+
     pygame.display.flip()
-    
+
     clock.tick(30)
 
 pygame.quit()
 sys.exit()
-
-#todos:
-#-make the player only jump once or twice
-#-making it so the player cant leav the win
