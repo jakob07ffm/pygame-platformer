@@ -12,7 +12,6 @@ BLUE = (0, 0, 255)
 BG_COLOR = (135, 206, 235)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
-YELLOW = (255, 255, 0)
 
 # Initialize window
 win = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -38,7 +37,7 @@ obstacles = [
 
 power_ups = []
 power_up_size = 30
-power_up_effect_duration = 300  # frames
+power_up_effect_duration = 0
 
 backgrounds = [pygame.Surface((WIDTH, HEIGHT)) for _ in range(2)]
 backgrounds[0].fill(BG_COLOR)
@@ -97,43 +96,52 @@ def apply_gravity():
 def check_collisions():
     global player_jump_count, player_vel, player_pos, score, power_ups, power_up_effect_duration
 
+    player_rect = pygame.Rect(player_pos[0], player_pos[1], player_size, player_size)
     player_on_ground = False
-    if player_pos[1] + player_size >= floor[1]:
+
+    # Floor collision
+    if player_rect.bottom >= floor[1]:
         player_pos[1] = floor[1] - player_size
         player_vel[1] = 0
         player_on_ground = True
         player_jump_count = 0
 
+    # Obstacle collision
     for obstacle in obstacles:
-        if (player_pos[1] + player_size > obstacle[1] and
-            player_pos[1] < obstacle[1] + obstacle[3] and
-            player_pos[0] + player_size > obstacle[0] and
-            player_pos[0] < obstacle[0] + obstacle[2]):
-            if player_vel[1] > 0:
-                player_vel[1] = 0
-                player_pos[1] = obstacle[1] - player_size
-            elif player_vel[1] < 0:
-                player_vel[1] = 0
-                player_pos[1] = obstacle[1] + obstacle[3]
-            if player_vel[0] > 0:
-                player_pos[0] = obstacle[0] - player_size
-            elif player_vel[0] < 0:
-                player_pos[0] = obstacle[0] + obstacle[2]
+        obstacle_rect = pygame.Rect(obstacle[0], obstacle[1], obstacle[2], obstacle[3])
+        if player_rect.colliderect(obstacle_rect):
+            # Determine the side of collision
+            dx = (player_rect.centerx - obstacle_rect.centerx) / obstacle_rect.width
+            dy = (player_rect.centery - obstacle_rect.centery) / obstacle_rect.height
 
+            if abs(dx) > abs(dy):
+                # Horizontal collision
+                if dx > 0:
+                    # Colliding from the right
+                    player_pos[0] = obstacle_rect.right
+                else:
+                    # Colliding from the left
+                    player_pos[0] = obstacle_rect.left - player_size
+                player_vel[0] = 0
+            else:
+                # Vertical collision
+                if dy > 0:
+                    # Colliding from the bottom
+                    player_pos[1] = obstacle_rect.bottom
+                else:
+                    # Colliding from the top
+                    player_pos[1] = obstacle_rect.top - player_size
+                    player_on_ground = True
+                    player_jump_count = 0
+                player_vel[1] = 0
+
+    # Power-up collision
     for power_up in power_ups:
-        if (player_pos[1] + player_size > power_up[1] and
-            player_pos[1] < power_up[1] + power_up[3] and
-            player_pos[0] + player_size > power_up[0] and
-            player_pos[0] < power_up[0] + power_up[2]):
+        power_up_rect = pygame.Rect(power_up[0], power_up[1], power_up[2], power_up[3])
+        if player_rect.colliderect(power_up_rect):
             power_ups.remove(power_up)
             score += 100
             power_up_effect_duration = 300
-
-    if player_pos[1] > HEIGHT - player_size:
-        player_pos[1] = HEIGHT - player_size
-        player_vel[1] = 0
-        player_on_ground = True
-        player_jump_count = 0
 
     return player_on_ground
 
