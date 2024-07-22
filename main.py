@@ -12,6 +12,7 @@ BLUE = (0, 0, 255)
 BG_COLOR = (135, 206, 235)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+LAVA_COLOR = (255, 69, 0)
 
 # Initialize window
 win = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -19,7 +20,7 @@ pygame.display.set_caption('Advanced Platformer')
 
 # Game Variables
 player_size = 50
-player_pos = [WIDTH // 2, HEIGHT - 2 * player_size]
+player_pos = [WIDTH // 2, HEIGHT - 3 * player_size]  # Start higher up
 player_vel = [0, 0]
 player_speed = 5
 player_jump = -15
@@ -37,6 +38,7 @@ obstacles = [
 
 # Adding platforms
 platforms = [
+    [WIDTH // 2 - 50, HEIGHT - 3 * player_size + player_size, 100, 20],  # Starting platform directly under the player
     [WIDTH + 300, HEIGHT - 150, 100, 20],
     [WIDTH + 600, HEIGHT - 300, 150, 20],
     [WIDTH + 900, HEIGHT - 450, 120, 20],
@@ -65,7 +67,7 @@ def generate_obstacle():
 
 def generate_power_up():
     x = random.randint(WIDTH, WIDTH + 400)
-    y = HEIGHT - 100  # Place power-ups closer to the ground
+    y = random.randint(HEIGHT - 400, HEIGHT - 100)  # Place power-ups closer to the ground
     return [x, y, power_up_size, power_up_size]
 
 def draw_player():
@@ -90,6 +92,9 @@ def draw_background():
         if bg_x[i] <= -WIDTH:
             bg_x[i] = WIDTH
 
+def draw_floor():
+    pygame.draw.rect(win, LAVA_COLOR, floor)
+
 def handle_player_movement(keys):
     global player_jump_count
     if keys[pygame.K_a]:
@@ -105,17 +110,15 @@ def apply_gravity():
     player_pos[1] += player_vel[1]
 
 def check_collisions():
-    global player_jump_count, player_vel, player_pos, score, power_ups, power_up_effect_duration
+    global player_jump_count, player_vel, player_pos, score, power_ups, power_up_effect_duration, running
 
     player_rect = pygame.Rect(player_pos[0], player_pos[1], player_size, player_size)
     player_on_ground = False
 
-    # Floor collision
+    # Floor collision (lava)
     if player_rect.bottom >= floor[1]:
-        player_pos[1] = floor[1] - player_size
-        player_vel[1] = 0
-        player_on_ground = True
-        player_jump_count = 0
+        # Game Over if player touches the floor (lava)
+        running = False
 
     # Obstacle collision
     for obstacle in obstacles:
@@ -165,6 +168,10 @@ def check_collisions():
             score += 100
             power_up_effect_duration = 300
 
+    # Game Over if player touches the left side
+    #if player_pos[0] <= 0:
+     #   running = False
+
     return player_on_ground
 
 def update_obstacles():
@@ -179,7 +186,7 @@ def update_platforms():
         platform[0] -= scroll_speed
     if platforms and platforms[0][0] + platforms[0][2] < 0:
         platforms.pop(0)
-        platforms.append([WIDTH + random.randint(200, 600), HEIGHT - random.randint(150, 450), random.randint(80, 150), 20])
+        platforms.append([WIDTH + random.randint(200, 600), HEIGHT - random.randint(100, 400), random.randint(80, 150), 20])
 
 def update_power_ups():
     for power_up in power_ups:
@@ -198,6 +205,7 @@ running = True
 while running:
     win.fill(WHITE)
     draw_background()
+    draw_floor()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
