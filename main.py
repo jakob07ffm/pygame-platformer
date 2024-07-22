@@ -35,6 +35,13 @@ obstacles = [
     [WIDTH + 1000, HEIGHT - 70, 50, 50],
 ]
 
+# Adding platforms
+platforms = [
+    [WIDTH + 300, HEIGHT - 150, 100, 20],
+    [WIDTH + 600, HEIGHT - 300, 150, 20],
+    [WIDTH + 900, HEIGHT - 450, 120, 20],
+]
+
 power_ups = []
 power_up_size = 30
 power_up_effect_duration = 0
@@ -67,6 +74,10 @@ def draw_player():
 def draw_obstacles():
     for obstacle in obstacles:
         pygame.draw.rect(win, RED, obstacle)
+
+def draw_platforms():
+    for platform in platforms:
+        pygame.draw.rect(win, BLACK, platform)
 
 def draw_power_ups():
     for power_up in power_ups:
@@ -135,6 +146,17 @@ def check_collisions():
                     player_jump_count = 0
                 player_vel[1] = 0
 
+    # Platform collision
+    for platform in platforms:
+        platform_rect = pygame.Rect(platform[0], platform[1], platform[2], platform[3])
+        if player_rect.colliderect(platform_rect):
+            if player_vel[1] > 0 and player_rect.bottom <= platform_rect.top + 10:
+                # Colliding from the top
+                player_pos[1] = platform_rect.top - player_size
+                player_vel[1] = 0
+                player_on_ground = True
+                player_jump_count = 0
+
     # Power-up collision
     for power_up in power_ups:
         power_up_rect = pygame.Rect(power_up[0], power_up[1], power_up[2], power_up[3])
@@ -151,6 +173,13 @@ def update_obstacles():
     if obstacles and obstacles[0][0] + obstacles[0][2] < 0:
         obstacles.pop(0)
         obstacles.append(generate_obstacle())
+
+def update_platforms():
+    for platform in platforms:
+        platform[0] -= scroll_speed
+    if platforms and platforms[0][0] + platforms[0][2] < 0:
+        platforms.pop(0)
+        platforms.append([WIDTH + random.randint(200, 600), HEIGHT - random.randint(150, 450), random.randint(80, 150), 20])
 
 def update_power_ups():
     for power_up in power_ups:
@@ -180,9 +209,11 @@ while running:
     player_on_ground = check_collisions()
 
     update_obstacles()
+    update_platforms()
     update_power_ups()
 
     draw_obstacles()
+    draw_platforms()
     draw_power_ups()
     draw_player()
     draw_score()
