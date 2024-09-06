@@ -17,3 +17,4 @@ This is a basic platformer game built using Python and the Pygame library. The g
 - **D Key:** Move right
 - **Spacebar:** Jump (double jump is allowed)
 
+![](jumping_screenshot.JPG)
